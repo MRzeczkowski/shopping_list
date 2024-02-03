@@ -7,13 +7,16 @@
 <div class="text-center">
     <h1 class="display-4">Here is your shopping list!</h1>
 
-    <form asp-action="Create" method="post">
-        <div class="form-group">
-            <label for="Name">Product Name</label>
-            <input type="text" class="form-control" id="Name" name="Name" required/>
-        </div>
-        <button type="submit" class="btn btn-primary">Add Product</button>
-    </form>
+    <div class="d-flex justify-content-center mb-3">
+        <form asp-action="Create" method="post" class="w-50">
+            <div class="input-group">
+                <input type="text" class="form-control" name="productName" placeholder="Product Name" required/>
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+        </form>
+    </div>
 
     @if (Model.Any())
     {
@@ -22,6 +25,7 @@
             <tr>
                 <th>Name</th>
                 <th>Purchased</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
@@ -32,7 +36,6 @@
                     <td>
                         <form asp-action="Edit" asp-controller="Home" method="post">
                             <input type="hidden" name="id" value="@product.Id.ToString()"/>
-
                             <input type="checkbox" name="isPurchased" value="true"
                                    @(product.IsPurchased ? "checked='checked'" : "")
                                    onchange="this.form.submit()"/>

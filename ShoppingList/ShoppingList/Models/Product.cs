@@ -4,9 +4,9 @@ namespace ShoppingList.Models;
 
 public class Product
 {
-    public ObjectId? Id { get; set; }
+    public ObjectId? Id { get; init; }
 
-    public required string Name { get; set; }
+    public required string Name { get; init; }
 
-    public bool IsPurchased { get; set; }
+    public bool IsPurchased { get; init; }
 }

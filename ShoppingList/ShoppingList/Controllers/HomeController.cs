@@ -29,11 +29,17 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public IActionResult Create(Product newProduct)
+    public IActionResult Create(string productName)
     {
         if (ModelState.IsValid)
         {
-            newProduct.Id = ObjectId.GenerateNewId();
+            var newProduct = new Product
+            {
+                Id = ObjectId.GenerateNewId(),
+                Name = productName,
+                IsPurchased = false
+            };
+
             _products.InsertOne(newProduct);
         }
 
