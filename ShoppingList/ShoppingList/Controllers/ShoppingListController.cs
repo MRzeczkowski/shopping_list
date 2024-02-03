@@ -8,39 +8,27 @@ namespace ShoppingList.Controllers;
 
 public class ShoppingListController : Controller
 {
+    private static IMongoDatabase? _database;
     private readonly ILogger<ShoppingListController> _logger;
-
-    private readonly IMongoCollection<Product> _products;
+    private readonly IConfiguration _configuration;
 
     public ShoppingListController(ILogger<ShoppingListController> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
 
-        try
-        {
-            var mongoDbSettings = configuration.GetSection("MongoDB");
-            var connectionString = mongoDbSettings["ConnectionString"];
-            var databaseName = mongoDbSettings["Database"];
-            var collectionName = mongoDbSettings["CollectionName"];
-
-            var client = new MongoClient(connectionString);
-            var database = client.GetDatabase(databaseName);
-            _products = database.GetCollection<Product>(collectionName);
-
-            _logger.LogInformation("MongoDB connection established successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error establishing MongoDB connection.");
-            throw;
-        }
+        EstablishMongoConnection();
     }
 
     public IActionResult Index()
     {
+        EstablishMongoConnection();
+        
+        
         try
         {
-            var products = _products.Find(product => true).ToList();
+            var productsCollection = GetProductsCollection();
+            var products = productsCollection.Find(product => true).ToList();
             return View(products);
         }
         catch (Exception ex)
@@ -53,6 +41,8 @@ public class ShoppingListController : Controller
     [HttpPost]
     public IActionResult Create(string productName)
     {
+        EstablishMongoConnection();
+        
         if (ModelState.IsValid)
         {
             try
@@ -64,7 +54,8 @@ public class ShoppingListController : Controller
                     IsPurchased = false
                 };
 
-                _products.InsertOne(newProduct);
+                var productsCollection = GetProductsCollection();
+                productsCollection.InsertOne(newProduct);
                 _logger.LogInformation("Product created successfully: {ProductName}", productName);
             }
             catch (Exception ex)
@@ -83,12 +74,15 @@ public class ShoppingListController : Controller
     [HttpPost]
     public IActionResult Edit(string id, bool isPurchased)
     {
+        EstablishMongoConnection();
+        
         try
         {
             var filter = Builders<Product>.Filter.Eq(p => p.Id, new ObjectId(id));
             var update = Builders<Product>.Update.Set(p => p.IsPurchased, isPurchased);
 
-            _products.UpdateOne(filter, update);
+            var productsCollection = GetProductsCollection();
+            productsCollection.UpdateOne(filter, update);
             _logger.LogInformation("Product updated successfully: {ProductId}", id);
         }
         catch (Exception ex)
@@ -104,7 +98,8 @@ public class ShoppingListController : Controller
     {
         try
         {
-            _products.DeleteOne(product => product.Id == new ObjectId(id));
+            var productsCollection = GetProductsCollection();
+            productsCollection.DeleteOne(product => product.Id == new ObjectId(id));
             _logger.LogInformation("Product deleted successfully: {ProductId}", id);
         }
         catch (Exception ex)
@@ -120,4 +115,32 @@ public class ShoppingListController : Controller
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+
+    private void EstablishMongoConnection()
+    {
+        if (_database != null)
+        {
+            return;
+        }
+
+        try
+        {
+            var mongoDbSettings = _configuration.GetSection("MongoDB");
+            var connectionString = mongoDbSettings["ConnectionString"];
+            var databaseName = mongoDbSettings["Database"];
+
+            var client = new MongoClient(connectionString);
+            _database = client.GetDatabase(databaseName);
+
+            _logger.LogInformation("MongoDB connection established successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error establishing MongoDB connection.");
+            throw;
+        }
+    }
+
+    private IMongoCollection<Product> GetProductsCollection() =>
+        _database!.GetCollection<Product>(_configuration.GetSection("MongoDB")["CollectionName"]);
 }
