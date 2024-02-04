@@ -16,14 +16,11 @@ public class ShoppingListController : Controller
     {
         _logger = logger;
         _configuration = configuration;
-
-        EstablishMongoConnection();
     }
 
     public IActionResult Index()
     {
-        EstablishMongoConnection();
-        
+        EnsureMongoConnection();
         
         try
         {
@@ -41,7 +38,7 @@ public class ShoppingListController : Controller
     [HttpPost]
     public IActionResult Create(string productName)
     {
-        EstablishMongoConnection();
+        EnsureMongoConnection();
         
         if (ModelState.IsValid)
         {
@@ -74,7 +71,7 @@ public class ShoppingListController : Controller
     [HttpPost]
     public IActionResult Edit(string id, bool isPurchased)
     {
-        EstablishMongoConnection();
+        EnsureMongoConnection();
         
         try
         {
@@ -116,7 +113,7 @@ public class ShoppingListController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private void EstablishMongoConnection()
+    private void EnsureMongoConnection()
     {
         if (_database != null)
         {
